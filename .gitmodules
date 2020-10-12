@@ -1,0 +1,6 @@
+[submodule "gtex-viz"]
+	path = gtex-viz
+	url = https://github.com/cjops/gtex-viz
+[submodule "gtex-pipeline"]
+	path = gtex-pipeline
+	url = https://github.com/cjops/gtex-pipeline
