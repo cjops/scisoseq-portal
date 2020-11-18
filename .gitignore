@@ -1,0 +1,4 @@
+node_modules/
+static/css/isoform.css
+static/js/transcript-browser.bundle.min.js
+static/js/all_symbols.js

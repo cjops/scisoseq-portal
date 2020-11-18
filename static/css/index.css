@@ -1,0 +1,42 @@
+#gtexTranscriptTracks2 .exon-curated {
+    fill: #FAA5F5 !important;
+    stroke: #AD61A9 !important;
+}
+#gtexTranscriptTracks2 text#modelLabel {
+    fill: #FAA5F5 !important;
+}
+
+.exon-curated:focus {
+    outline: none;
+    stroke: rgb(0, 0, 0);
+    stroke-width: 2px;
+}
+
+div.selectize-input { /* make selectize input look more like bootstrap 4 */
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    box-shadow: none;
+}
+
+div.selectize-input.focus {
+    color: #495057;
+    background-color: #fff;
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+button#geneSubmit { /* make bootstrap button look more like selectize */
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+#expressionBubbles .highlighted {
+    fill: red;
+}
