@@ -28,7 +28,7 @@ _db.model_exons.create_index('gene_name', unique=True)
 
 print('\n\n4/5 writing list of gene symbols for selectize')
 
-with open('js/all_symbols.js', 'w') as f:
+with open('static/js/all_symbols.js', 'w') as f:
     generate_selectize(f, gene_file)
 
 print('\n\n5/5 adding expression values')
