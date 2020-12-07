@@ -177,7 +177,6 @@ def drop_dataset(name):
 def drop_model_exons():
     with _con:
         _con.execute('DELETE FROM model_exons')
-drop_model_exons()
 
 def generate_selectize(f, dataset):
     selectize = sorted([x[0] for x in _con.execute('SELECT DISTINCT gene_name FROM genes WHERE dataset=?', (dataset,))])
