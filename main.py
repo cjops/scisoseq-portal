@@ -3,62 +3,69 @@ from flask_cors import CORS
 app = Flask(__name__, static_url_path='')
 CORS(app)
 
-from pymongo import MongoClient
-client = MongoClient('localhost', 27017)
-db = client.gandallab
+import sqlite3
+import json
+import time
 
 def find_gene(gene_name, gene_files=[]):
+    tic = time.time()
+    _con = sqlite3.connect('scisoseq.db')
+    #_con.row_factory = sqlite3.Row
     txd = []
     exd = {}
     model = []
-    filter = {'file': {'$in': gene_files}} if gene_files else {}
-    results = db.genes.find({'gene.gene_name': gene_name, **filter})
-    for document in results:
-        g = document['gene']
-        print(g['gene_id'])
-        for tx in g['transcripts']:
-            if tx.get('transcript_type') == 'retained_intron':
-                continue
-            tid = '_'.join([document['file'], tx['transcript_id']]).replace('.', '_')
-            txd.append({
-                'file': document['file'],
-                'chromosome': tx['chromosome'].lstrip('chr'),
-                'start': tx['start'],
-                'end': tx['end'],
-                'strand': tx['strand'],
-                'gencodeId': tx['gene_id'],
-                'geneSymbol': tx['gene_name'],
-                'transcriptId': tid,
-                'expression': tx.get('expression', [])
-            })
+    #filter = {'file': {'$in': gene_files}} if gene_files else {}
+    transcripts = _con.execute("""SELECT
+        json_extract(attributes, '$.transcript_type'),
+        chromosome,
+        start,
+        end,
+        strand,
+        dataset,
+        gene_id,
+        gene_name,
+        transcript_id,
+        json_extract(attributes, '$.expression')
+    FROM transcripts WHERE gene_name=?""", (gene_name,))
+    for tx in transcripts:
+        if tx[0] == 'retained_intron':
+            continue
+        tx = dict(zip(('chromosome', 'start', 'end', 'strand', 'file', 'gencodeId', 'geneSymbol', 'transcriptId', 'expression'), tx[1:]))
+        tx['transcriptId'] = '_'.join([tx['file'], tx['transcriptId']]).replace('.', '_')
+        tx['chromosome'] = tx['chromosome'].lstrip('chr')
+        if tx['expression']:
+            tx['expression'] = json.loads(tx['expression'])
+        else:
+            tx['expression'] = []
+        txd.append(tx)
+    exons = _con.execute("""SELECT
+        dataset,
+        transcript_id,
+        chromosome,
+        start,
+        end,
+        strand,
+        exon_number
+    FROM exons WHERE gene_name=?""", (gene_name,))
+    for ex in exons:
+        tid = '_'.join([ex[0], ex[1]]).replace('.', '_')
+        ex = dict(zip(('chrom', 'chromStart', 'chromEnd', 'strand', 'exonNumber'), ex[2:]))
+        if tid not in exd:
             exd[tid] = []
-            for ex in tx['exons']:
-                exd[tid].append({
-                    'chrom': ex['chromosome'].lstrip('chr'),
-                    'chromStart': ex['start'],
-                    'chromEnd': ex['end'],
-                    'exonNumber': ex['exon_number'],
-                    'strand': ex['strand']
-                })
-    for ex in db.model_exons.find_one({'gene_name': gene_name})['exons']:
-        model.append({
-            'chrom': ex['chromosome'].lstrip('chr'),
-            'chromStart': ex['start'],
-            'chromEnd': ex['end'],
-            'strand': ex['strand'],
-            'exonId': ex['exon_id'],
-            'exonNumber': ex['exon_number']
-        })
-    txd.insert(0, {
-        'chromosome': model[0]['chrom'],
-        'start': model[0]['chromStart'],
-        'end': model[-1]['chromEnd'],
-        'strand': model[0]['strand'],
-        'gencodeId': 'modelGeneID',
-        'geneSymbol': 'modelGeneSymbol',
-        'transcriptId': 'modelGeneTranscript'
-    })
-    exd['modelGeneTranscript'] = model.copy()
+        exd[tid].append(ex)
+    model_exons = _con.execute("""SELECT
+        chromosome,
+        start,
+        end,
+        strand,
+        exon_id,
+        exon_number
+    FROM model_exons WHERE gene_name=?""", (gene_name,))
+    for ex in model_exons:
+        ex = dict(zip(('chrom', 'chromStart', 'chromEnd', 'strand', 'exonId', 'exonNumber'), ex))
+        model.append(ex)
+    toc = time.time()
+    print(toc-tic)
     return {'exons': exd, 'transcripts': txd, 'modelExons': model}
 
 @app.route('/')
