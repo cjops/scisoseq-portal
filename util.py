@@ -2,6 +2,7 @@ import sqlite3
 import json
 from pathlib import Path
 from pprint import pprint
+from datetime import date
 
 _con = sqlite3.connect('scisoseq.db')
 #_con.row_factory = sqlite3.Row
