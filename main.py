@@ -1,21 +1,25 @@
-from flask import Flask, request, render_template
+import sqlite3
+import json
+from flask import Flask, request, render_template, g
 from flask_cors import CORS
 app = Flask(__name__, static_url_path='')
 CORS(app)
 
-import sqlite3
-import json
-import time
+DATABASE = 'scisoseq.db'
 
-def find_gene(gene_name, gene_files=[]):
-    tic = time.time()
-    _con = sqlite3.connect('scisoseq.db')
-    #_con.row_factory = sqlite3.Row
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+        db.row_factory = sqlite3.Row
+    return db
+
+def find_gene(gene_name):
+    con = get_db()
     txd = []
     exd = {}
     model = []
-    #filter = {'file': {'$in': gene_files}} if gene_files else {}
-    transcripts = _con.execute("""SELECT
+    transcripts = con.execute("""SELECT
         json_extract(attributes, '$.transcript_type'),
         chromosome,
         start,
@@ -38,7 +42,7 @@ def find_gene(gene_name, gene_files=[]):
         else:
             tx['expression'] = []
         txd.append(tx)
-    exons = _con.execute("""SELECT
+    exons = con.execute("""SELECT
         dataset,
         transcript_id,
         chromosome,
@@ -67,6 +71,12 @@ def find_gene(gene_name, gene_files=[]):
     toc = time.time()
     print(toc-tic)
     return {'exons': exd, 'transcripts': txd, 'modelExons': model}
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
 
 @app.route('/')
 def hello_world():
