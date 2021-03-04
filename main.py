@@ -57,7 +57,7 @@ def find_gene(gene_name):
         if tid not in exd:
             exd[tid] = []
         exd[tid].append(ex)
-    model_exons = _con.execute("""SELECT
+    model_exons = con.execute("""SELECT
         chromosome,
         start,
         end,
@@ -68,8 +68,6 @@ def find_gene(gene_name):
     for ex in model_exons:
         ex = dict(zip(('chrom', 'chromStart', 'chromEnd', 'strand', 'exonId', 'exonNumber'), ex))
         model.append(ex)
-    toc = time.time()
-    print(toc-tic)
     return {'exons': exd, 'transcripts': txd, 'modelExons': model}
 
 @app.teardown_appcontext
